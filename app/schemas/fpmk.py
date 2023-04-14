@@ -18,3 +18,6 @@ class FpmkCreate(FpmkBase):
     fpmk: int
     date: date
 
+
+class Fpmk(FpmkBase):
+    pass
