@@ -1,0 +1,1 @@
+from .betaFIRE import betaFireModel
