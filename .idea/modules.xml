@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/FastAppX.iml" filepath="$PROJECT_DIR$/.idea/FastAppX.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../resrc-planning/.idea/resrc-planning.iml" filepath="$PROJECT_DIR$/../resrc-planning/.idea/resrc-planning.iml" />
     </modules>
   </component>
 </project>
