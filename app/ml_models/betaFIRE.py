@@ -2,11 +2,11 @@ from abc import ABC
 import numpy as np
 from typing import List
 import pandas as pd
-from statsmodels.tsa.arima.model import ARIMA
-from pandas.tseries.offsets import MonthEnd
+from app.schemas.fpmk import FpmkCreate
 from scipy.optimize import minimize, Bounds
 from scipy.special import beta, betainc
 from functools import partial
+from fastapi.encoders import jsonable_encoder
 import datetime
 import json
 
@@ -15,6 +15,7 @@ class ParameterBounds():
     def __init__(self, dict_b: dict):
         self._bounds = dict_b
 
+    @property
     def bounds(self):
         return self._bounds
 
@@ -53,7 +54,6 @@ class BetaFire(FailureRateModel):
         super().__init__()
         self.y_bar = None
         self.res = None
-        self.arma = None
         self.X = None
         self._stabilizer = 1e2
         self._opt_options = {
@@ -74,7 +74,7 @@ class BetaFire(FailureRateModel):
         c = np.exp(logc)
         m = np.exp(logm)
         xprime = x * (1 - k)
-        incomplete_beta_portion = batinc(a, b, k + xprime / c) * beta(a, b)
+        incomplete_beta_portion = betainc(a, b, k + xprime / c) * beta(a, b)
         return c * m * incomplete_beta_portion / (1 - k)
 
     @staticmethod
@@ -102,11 +102,11 @@ class BetaFire(FailureRateModel):
 
         return wrap
 
-    def fit(self, s: pd.Series, init: ParameterInit, bounds: ParameterBounds,
+    def fit(self, x: List[FpmkCreate], init: ParameterInit, bounds: ParameterBounds,
             method='failure-rate', verbose=0, fixed: dict = None):
-        # self.X = X.copy()
-        # self.arma = ARIMA(X, order=(0, 0, 3))
-        # self.res = self.arma.fit()
+        fpmk_hist = pd.DataFrame(data=jsonable_encoder(x))
+        fpmk_hist['date'] = pd.to_datetime(fpmk_hist['date'])
+        s = fpmk_hist[['mileage', 'fpmk']].set_index('mileage').squeeze()
         assert method in ['failure-rate', 'number-of-failure']
         # checking parameters
         for key in bounds.keys():
@@ -120,13 +120,12 @@ class BetaFire(FailureRateModel):
                 assert key not in bounds.keys(), f"""No bound should be specified for fixed parameters, param_name: {key} """
                 assert key not in init.keys(), f"""No initial value should be specified for fixed parameters, param_name: {key} """
         self.fixed_params = fixed
-
-        if s.isnull().sum():
+        if s.isnull().any():
             if verbose:
                 print('Removing NaN from input series...')
             s = s.dropna()
 
-        if s.index.isnull().sum():
+        if s.index.isnull().any():
             if verbose:
                 print('Removing NaN from index...')
             s = s[s.index.notnull()]
@@ -146,7 +145,7 @@ class BetaFire(FailureRateModel):
             x0 = [init.get(p, init.get(p)) for p in self.opt_params]
             lb = [min(bounds.get(p, [None])) for p in self.opt_params]
             ub = [max(bounds.get(p, [None])) for p in self.opt_params]
-        print(x0)
+            print(x0)
         out = minimize(
             partial(self.objective, f=func), x0=x0, args=(s.index, s.values), bounds=Bounds(lb, ub),
             options=self._opt_options
@@ -165,11 +164,9 @@ class BetaFire(FailureRateModel):
             if param in init.keys():
                 self.best_params[param] = val
 
-    def predict(self, no_of_forecast: int) -> pd.Series:
-        fcst_start = self.series.index.shift(1)[-1]
-        fcst_end = self.series.index.shift(no_of_forecast)[-1]
-        # y_bar = self.res.predict(start=fcst_start, end=fcst_end)
-        # self.y_bar = y_bar.copy()
+    def predict(self, fcst_range: List[FpmkCreate]) -> List[FpmkCreate]:
+        fcst_range = pd.DataFrame(data=jsonable_encoder(fcst_range))
+        fcst_range['date'] = pd.to_datetime(fcst_range['date'])
         params = {}
         for p in self.opt_params:
             if self.fixed_params:
@@ -178,11 +175,15 @@ class BetaFire(FailureRateModel):
                 params[p] = self.best_params.get(p)
         params = list(params.values())
         fpmk = 1e6 * pd.Series(
-            BetaFire.failure_rate(params, x=no_of_forecast), index=no_of_forecast, name='fpmk'
+            BetaFire.failure_rate(params, x=fcst_range['mileage'].squeeze().to_numpy()), index=fcst_range.index, name='fpmk'
         )
-        fpmk.rename_axis(index='time', inplace=True)
-
-        return fpmk
+        res = fcst_range.copy()
+        res.loc[:, 'fpmk'] = fpmk
+        print(fcst_range['mileage'].squeeze().to_numpy())
+        res_list = []
+        for item in json.loads(res.to_json(orient='records')):
+            res_list.append(FpmkCreate(**item))
+        return res_list
 
 
 # deterioration type bounds
