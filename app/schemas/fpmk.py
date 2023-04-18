@@ -8,15 +8,14 @@ from datetime import date, datetime
 class FpmkBase(BaseModel):
     system: str
     subsystem: Optional[str] = None
-    fpmk: int
+    mileage: int
+    unit: str
+    fpmk: Optional[int]
     date: date
 
 
 class FpmkCreate(FpmkBase):
-    system: str
-    subsystem: str
-    fpmk: int
-    date: date
+    fpmk: Optional[int]
 
 
 class Fpmk(FpmkBase):

@@ -1,1 +1,1 @@
-from .betaFIRE import betaFireModel, defaultInit, defaultBounds
+from .betaFIRE import defaultBounds, defaultInit

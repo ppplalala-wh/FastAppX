@@ -143,10 +143,10 @@ class BetaFire(FailureRateModel):
             lb = [fixed.get(p, min(bounds.get(p, [None]))) for p in self.opt_params]
             ub = [fixed.get(p, max(bounds.get(p, [None]))) for p in self.opt_params]
         else:
-            x0 = [fixed.get(p, init.get(p)) for p in self.opt_params]
+            x0 = [init.get(p, init.get(p)) for p in self.opt_params]
             lb = [min(bounds.get(p, [None])) for p in self.opt_params]
             ub = [max(bounds.get(p, [None])) for p in self.opt_params]
-
+        print(x0)
         out = minimize(
             partial(self.objective, f=func), x0=x0, args=(s.index, s.values), bounds=Bounds(lb, ub),
             options=self._opt_options
@@ -165,7 +165,6 @@ class BetaFire(FailureRateModel):
             if param in init.keys():
                 self.best_params[param] = val
 
-
     def predict(self, no_of_forecast: int) -> pd.Series:
         fcst_start = self.series.index.shift(1)[-1]
         fcst_end = self.series.index.shift(no_of_forecast)[-1]
@@ -178,12 +177,13 @@ class BetaFire(FailureRateModel):
             else:
                 params[p] = self.best_params.get(p)
         params = list(params.values())
-        fpmk= 1e6*pd.Series(
+        fpmk = 1e6 * pd.Series(
             BetaFire.failure_rate(params, x=no_of_forecast), index=no_of_forecast, name='fpmk'
         )
         fpmk.rename_axis(index='time', inplace=True)
 
         return fpmk
+
 
 # deterioration type bounds
 det_type_bound = {
@@ -197,6 +197,5 @@ det_type_init = {
     'random': {'a': 0.7, 'b': 0.7, 'k': 0.5, 'logc': 19.5, 'logm': -19},
     'fatigue': {'a': 0.7, 'b': 0.7, 'k': 0.5, 'logm': -19}
 }
-betaFireModel = BetaFire()
-defaultInit = ParameterInit(det_type_bound['wearout'])
+defaultInit = ParameterInit(det_type_init['wearout'])
 defaultBounds = ParameterBounds(det_type_bound['wearout'])
