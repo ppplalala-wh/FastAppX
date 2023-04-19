@@ -4,7 +4,7 @@
     "subsystem": "DOR",
     "mileage": 1000,
     "unit": "km",
-    "fpmk": 2,
+    "fpmk": 7,
     "date": "2022-03-31"
   },
   {
@@ -12,7 +12,7 @@
     "subsystem": "DOR",
     "mileage": 1500,
     "unit": "km",
-    "fpmk": 2,
+    "fpmk": 5,
     "date": "2022-04-30"
   },
   {
@@ -20,7 +20,7 @@
     "subsystem": "DOR",
     "mileage": 2000,
     "unit": "km",
-    "fpmk": 3,
+    "fpmk": 6,
     "date": "2022-05-31"
   },
   {
@@ -28,7 +28,7 @@
     "subsystem": "DOR",
     "mileage": 2300,
     "unit": "km",
-    "fpmk": 5,
+    "fpmk": 7,
     "date": "2022-06-30"
   },
   {
@@ -36,7 +36,7 @@
     "subsystem": "DOR",
     "mileage": 2700,
     "unit": "km",
-    "fpmk": 3,
+    "fpmk": 4,
     "date": "2022-07-31"
   },
   {
@@ -44,7 +44,7 @@
     "subsystem": "DOR",
     "mileage": 3200,
     "unit": "km",
-    "fpmk": 1,
+    "fpmk": 5,
     "date": "2022-08-31"
   },
    {
@@ -60,7 +60,7 @@
     "subsystem": "DOR",
     "mileage": 4000,
     "unit": "km",
-    "fpmk": 4,
+    "fpmk": 2,
     "date": "2022-10-31"
   }
 ]

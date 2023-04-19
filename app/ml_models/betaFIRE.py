@@ -144,13 +144,12 @@ class BetaFire(FailureRateModel):
         if fixed:
             x0 = [fixed.get(p, init.get(p)) for p in self.opt_params]
             lb = [fixed.get(p, min(bounds.get(p, [None]))) for p in self.opt_params]
-            ub = [fixed.get(p, max(bounds.get(p, [None]))) for p in self.opt_params]
+            # add a small delta on upper bound to make optimization function work
+            ub = [fixed.get(p, max(bounds.get(p, [None]))) + 0.001 for p in self.opt_params]
         else:
             x0 = [init.get(p, init.get(p)) for p in self.opt_params]
             lb = [min(bounds.get(p, [None])) for p in self.opt_params]
             ub = [max(bounds.get(p, [None])) for p in self.opt_params]
-            print(x0)
-            print(s)
         out = minimize(
             partial(self.objective, f=func), x0=x0, args=(s.index, s.values), bounds=Bounds(lb, ub),
             options=self._opt_options

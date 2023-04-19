@@ -9,16 +9,16 @@ class BetaFireBase(BaseModel):
     a: float
     b: float
     k: float
-    logc: Optional[float] = 0.
-    logm: Optional[float] = 0.
+    logc: Optional[float] = None
+    logm: Optional[float] = None
 
 
 class BetaFireCreate(BetaFireBase):
     a: float
     b: float
     k: float
-    logc: Optional[float] = 0.
-    logm: Optional[float] = 0.
+    logc: Optional[float] = None
+    logm: Optional[float] = None
 
 
 class BetaFire(BetaFireBase):
