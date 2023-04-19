@@ -6,16 +6,16 @@ from datetime import date, datetime
 
 # Shared properties
 class BetaFireBase(BaseModel):
-    alpha: float
-    beta: float
+    a: float
+    b: float
     k: float
     logc: Optional[float] = 0.
     logm: Optional[float] = 0.
 
 
 class BetaFireCreate(BetaFireBase):
-    alpha: float
-    beta: float
+    a: float
+    b: float
     k: float
     logc: Optional[float] = 0.
     logm: Optional[float] = 0.

@@ -1,8 +1,11 @@
 from abc import ABC
 import numpy as np
-from typing import List
+from typing import List, Union, Tuple
 import pandas as pd
+
+from app.schemas import FpmkCreate
 from app.schemas.fpmk import FpmkCreate
+from app.schemas.betaFire import BetaFireCreate
 from scipy.optimize import minimize, Bounds
 from scipy.special import beta, betainc
 from functools import partial
@@ -83,7 +86,8 @@ class BetaFire(FailureRateModel):
         c = np.exp(logc)
         m = np.exp(logm)
         xprime = x * (1 - k)
-        return m * np.power(k + xprime / c, a - 1) * np.power(1 - k - xprime / c, b - 1)
+        res = m*np.power(k + xprime/c, a-1)*np.power(1 - k - (xprime/c), b-1)
+        return res
 
     @staticmethod
     def failure_acc(params, x):
@@ -146,6 +150,7 @@ class BetaFire(FailureRateModel):
             lb = [min(bounds.get(p, [None])) for p in self.opt_params]
             ub = [max(bounds.get(p, [None])) for p in self.opt_params]
             print(x0)
+            print(s)
         out = minimize(
             partial(self.objective, f=func), x0=x0, args=(s.index, s.values), bounds=Bounds(lb, ub),
             options=self._opt_options
@@ -164,7 +169,7 @@ class BetaFire(FailureRateModel):
             if param in init.keys():
                 self.best_params[param] = val
 
-    def predict(self, fcst_range: List[FpmkCreate]) -> List[FpmkCreate]:
+    def predict(self, fcst_range: List[FpmkCreate]) -> tuple[list[FpmkCreate], BetaFireCreate]:
         fcst_range = pd.DataFrame(data=jsonable_encoder(fcst_range))
         fcst_range['date'] = pd.to_datetime(fcst_range['date'])
         params = {}
@@ -179,11 +184,10 @@ class BetaFire(FailureRateModel):
         )
         res = fcst_range.copy()
         res.loc[:, 'fpmk'] = fpmk
-        print(fcst_range['mileage'].squeeze().to_numpy())
         res_list = []
         for item in json.loads(res.to_json(orient='records')):
             res_list.append(FpmkCreate(**item))
-        return res_list
+        return res_list, BetaFireCreate(**self.best_params)
 
 
 # deterioration type bounds

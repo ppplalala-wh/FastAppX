@@ -12,7 +12,7 @@ from app import schemas
 router = APIRouter()
 
 
-@router.post("/forecast_reliability", response_model=List[schemas.Fpmk])
+@router.post("/forecast_reliability", response_model=None)
 def forecast_reliability(
         *,
         fpmks_in: List[schemas.FpmkCreate],
@@ -25,8 +25,7 @@ def forecast_reliability(
     fcst_range = mileage_estimater.predict(num_cycles=no_cycles)
     # fit betaFire model
     betaFiremodel = BetaFire()
-    betaFiremodel.fit(fpmks_in, init=defaultInit.params, bounds=defaultBounds.bounds, fixed={'logc': 2.3})
+    betaFiremodel.fit(fpmks_in, init=defaultInit.params, bounds=defaultBounds.bounds, fixed={'logc': 10})
     # fcst reliability
-    res = betaFiremodel.predict(fcst_range)
-    return res
-
+    res, model = betaFiremodel.predict(fcst_range)
+    return {'forecast_result': res, 'best_params': model}
