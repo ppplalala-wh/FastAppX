@@ -1,0 +1,14 @@
+x-env: &env
+  HOST: 127.0.0.1
+services:
+  widget:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 8080:8080
+    command:
+      CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+    environment:
+      <<: *env
+    restart: always

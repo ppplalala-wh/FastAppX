@@ -10,12 +10,12 @@ class FpmkBase(BaseModel):
     subsystem: Optional[str] = None
     mileage: int
     unit: str
-    fpmk: Optional[int]
+    fpmk: Optional[float]
     date: date
 
 
 class FpmkCreate(FpmkBase):
-    fpmk: Optional[int]
+    fpmk: Optional[float]
 
 
 class Fpmk(FpmkBase):
