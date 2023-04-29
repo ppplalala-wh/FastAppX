@@ -2,7 +2,7 @@ from abc import ABC
 import numpy as np
 from typing import List, Union, Tuple
 import pandas as pd
-
+import os
 from app.schemas import FpmkCreate
 from app.schemas.fpmk import FpmkCreate
 from app.schemas.betaFire import BetaFireCreate
@@ -10,7 +10,7 @@ from scipy.optimize import minimize, Bounds
 from scipy.special import beta, betainc
 from functools import partial
 from fastapi.encoders import jsonable_encoder
-import datetime
+import random
 import json
 
 
@@ -55,6 +55,7 @@ class BetaFire(FailureRateModel):
 
     def __init__(self):
         super().__init__()
+        self.data = None
         self.y_bar = None
         self.res = None
         self.X = None
@@ -86,7 +87,7 @@ class BetaFire(FailureRateModel):
         c = np.exp(logc)
         m = np.exp(logm)
         xprime = x * (1 - k)
-        res = m*np.power(k + xprime/c, a-1)*np.power(1 - k - (xprime/c), b-1)
+        res = m * np.power(k + xprime / c, a - 1) * np.power(1 - k - (xprime / c), b - 1)
         return res
 
     @staticmethod
@@ -154,6 +155,7 @@ class BetaFire(FailureRateModel):
             partial(self.objective, f=func), x0=x0, args=(s.index, s.values), bounds=Bounds(lb, ub),
             options=self._opt_options
         )
+        self.data = fpmk_hist
         if not out.success:
             if not isinstance(out.message, str):
                 message = out.message.decode()
@@ -167,8 +169,11 @@ class BetaFire(FailureRateModel):
         for param, val in zip(self.opt_params, out.x):
             if param in init.keys():
                 self.best_params[param] = val
+        mod_id = self.save()
 
-    def predict(self, fcst_range: List[FpmkCreate]) -> tuple[list[FpmkCreate], BetaFireCreate]:
+        return BetaFireCreate(**self.best_params), mod_id
+
+    def predict(self, fcst_range: List[FpmkCreate]) -> List[FpmkCreate]:
         fcst_range = pd.DataFrame(data=jsonable_encoder(fcst_range))
         fcst_range['date'] = pd.to_datetime(fcst_range['date'])
         params = {}
@@ -179,14 +184,56 @@ class BetaFire(FailureRateModel):
                 params[p] = self.best_params.get(p)
         params = list(params.values())
         fpmk = 1e6 * pd.Series(
-            BetaFire.failure_rate(params, x=fcst_range['mileage'].squeeze().to_numpy()), index=fcst_range.index, name='fpmk'
+            BetaFire.failure_rate(params, x=fcst_range['mileage'].squeeze().to_numpy()), index=fcst_range.index,
+            name='fpmk'
         )
         res = fcst_range.copy()
         res.loc[:, 'fpmk'] = fpmk
         res_list = []
         for item in json.loads(res.to_json(orient='records')):
             res_list.append(FpmkCreate(**item))
-        return res_list, BetaFireCreate(**self.best_params)
+        return res_list
+
+    def predict_by_mileage(self, mileage:int)-> FpmkCreate:
+        params={}
+        for p in self.opt_params:
+            if self.fixed_params:
+                params[p] = self.best_params.get(p, self.fixed_params.get(p))
+            else:
+                params[p] = self.best_params.get(p)
+        params = list(params.values())
+        s = pd.Series(data=mileage)
+        fpmk = 1e6 * BetaFire.failure_rate(params, x=s.squeeze())
+
+        return fpmk
+
+    def save(self) -> str:
+        if self.best_params:
+            artefact = {'best_params': self.best_params,
+                        'fixed_params': self.fixed_params,
+                        'data': json.loads(self.data.to_json(orient='records',date_format='iso'))}
+            # generate random id
+            random_bits = random.getrandbits(32)
+            mod_id = "%4x" % random_bits
+            print(os.getcwd())
+            with open(f"model_register/{mod_id}.json", "w+") as out_file:
+                json.dump(artefact, out_file)
+            return mod_id
+        else:
+            return 'Faied to save model'
+
+    def load(self, mod_id: str) -> bool:
+        try:
+            file = open(f"model_register/{mod_id}.json")
+        except FileNotFoundError:
+            return False
+        all = json.load(file)
+        self.fixed_params = all['fixed_params']
+        self.best_params = all['best_params']
+        self.data = pd.DataFrame(all['data'])
+        self.data['date'] = pd.to_datetime(self.data['date'])
+        file.close()
+        return True
 
 
 # deterioration type bounds
