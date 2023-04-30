@@ -216,7 +216,7 @@ class BetaFire(FailureRateModel):
             random_bits = random.getrandbits(32)
             mod_id = "%4x" % random_bits
             print(os.getcwd())
-            with open(f"model_register/{mod_id}.json", "w+") as out_file:
+            with open(f"app/model_register/{mod_id}.json", "w+") as out_file:
                 json.dump(artefact, out_file)
             return mod_id
         else:
@@ -224,7 +224,7 @@ class BetaFire(FailureRateModel):
 
     def load(self, mod_id: str) -> bool:
         try:
-            file = open(f"model_register/{mod_id}.json")
+            file = open(f"app/model_register/{mod_id}.json")
         except FileNotFoundError:
             return False
         all = json.load(file)

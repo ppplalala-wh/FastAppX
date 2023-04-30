@@ -41,7 +41,6 @@ def forecast_by_mileage(
 @router.post("/forecast_by_cycles", response_model=List[schemas.FpmkCreate])
 def forecast_by_cycles(
         *,
-        fpmks_in: List[schemas.FpmkCreate],
         mod_id: str,
         no_fcst_cycles: int
 ) -> Any:
