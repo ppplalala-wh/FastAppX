@@ -8,3 +8,4 @@ plotly~=5.14.1
 streamlit~=1.21.0
 requests~=2.28.2
 uvicorn>=0.15.0,<0.16.0
+python-multipart==0.0.6

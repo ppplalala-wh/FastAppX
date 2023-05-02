@@ -19,7 +19,7 @@ def fit_transform(
 
 
 @router.post("/inverse_transform", response_model=List[schemas.FpmkCreate])
-def fit_transform(
+def inverse_transform(
         *,
         transformer_name: str,
         training_data: List[schemas.FpmkCreate],
