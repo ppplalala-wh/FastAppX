@@ -19,7 +19,7 @@ def train_model(
     # fit betaFire model
     betaFiremodel = BetaFire()
     model, id = betaFiremodel.fit(fpmks_in, init=defaultInit.params, bounds=defaultBounds.bounds,
-                      fixed={'logc': np.log(design_oem_mileage)})
+                                  fixed={'logc': np.log(design_oem_mileage)})
     return {'best_params': model, 'model_id': id}
 
 
@@ -57,4 +57,16 @@ def forecast_by_cycles(
     fcst_range = mileage_estimater.predict(num_cycles=no_fcst_cycles)
     # fcst reliability
     res = betaFiremodel.predict(fcst_range)
+    return res
+
+
+@router.post("/forecast", response_model=List[schemas.FpmkCreate])
+def forecast(
+        *,
+        mod_id: str,
+        input_fpmk: List[schemas.FpmkCreate]
+) -> Any:
+    betaFiremodel = BetaFire()
+    betaFiremodel.load(mod_id)
+    res = betaFiremodel.predict(input_fpmk)
     return res
